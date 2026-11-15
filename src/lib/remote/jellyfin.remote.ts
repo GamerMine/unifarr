@@ -1,5 +1,4 @@
 import { command, getRequestEvent, query, type RemoteQueryFunction } from '$app/server';
-import { logoutUser } from '#lib/server/auth/auth.js';
 import * as v from 'valibot';
 import Connectors, { JellyfinConnector } from '@unifarr/connectors';
 import { type Result } from '#lib/utils/types.ts';
@@ -218,9 +217,11 @@ export const jellyfinDeleteActiveEncoding = command(v.string(), async (playSessi
 export const jellyfinGetPlaySession = command(
 	v.object({
 		itemId: v.string(),
+		mediaSourceId: v.string(),
 		deviceProfile: JellyfinDeviceProfileSchema,
 		startTimeTicks: v.number(),
-		maxStreamingBitrate: v.number()
+		maxStreamingBitrate: v.number(),
+		audioStreamIndex: v.number(),
 	}),
 	async (data) => {
 		const {
@@ -235,9 +236,11 @@ export const jellyfinGetPlaySession = command(
 		const session = await conn.postItemsByIdPlaybackInfo(
 			userId,
 			data.itemId,
+			data.mediaSourceId,
 			data.maxStreamingBitrate,
 			data.startTimeTicks,
-			data.deviceProfile
+			data.audioStreamIndex,
+			data.deviceProfile,
 		);
 
 		if (!session.response.ok)
@@ -249,9 +252,7 @@ export const jellyfinGetPlaySession = command(
 			data: {
 				playbackUri:
 					mediaSource?.TranscodingUrl ||
-					`/Videos/${mediaSource.Id}/stream.mp4?Static=true&mediaSourceId=${
-						mediaSource.Id
-					}&Tag=${mediaSource.ETag}`,
+					`/Videos/${mediaSource.Id}/stream.mp4?Static=true&mediaSourceId=${mediaSource.Id}&Tag=${mediaSource.ETag}&AudioStreamIndex=${data.audioStreamIndex}`,
 				mediaSourceId: mediaSource?.Id,
 				playSessionId: session.data?.PlaySessionId,
 				directPlay: !!mediaSource?.SupportsDirectPlay || !!mediaSource?.SupportsDirectStream

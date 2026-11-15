@@ -10,3 +10,4 @@ export type JellyfinProfileConditionValue = components['schemas']['ProfileCondit
 export type JellyfinProfileConditionType = components['schemas']['ProfileConditionType'];
 export type JellyfinProfileCondition = components['schemas']['ProfileCondition'];
 export type JellyfinCodecProfile = components['schemas']['CodecProfile'];
+export type JellyfinMediaStream = components['schemas']['MediaStream'];

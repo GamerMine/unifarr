@@ -110,6 +110,7 @@
       "openTMDB": "Ouvrir dans TMDB"
     },
     "content": {
+      "audioLanguage": "Langue audio",
       "available": "Disponible",
       "beingAdded": "En cours d'ajout",
       "beingRemoved": "Suppression en cours",
@@ -128,6 +129,7 @@
       "networks": "Plateformes",
       "nextAirDate": "Prochaine diffusion",
       "play": "Lire",
+      "quality": "Qualitée",
       "queued": "En file d'attente",
       "recommendations": "Recommandations",
       "releaseDate": "Date de sortie",
@@ -203,14 +205,6 @@
       "tasks": "Tâches",
       "user": "Utilisateur"
     }
-  },
-  "tasks": {
-    "empty": "Aucune tâche",
-    "history": "Historique",
-    "inProgress": "En cours",
-    "running": "En cours d'exécution…",
-    "scheduled": "Programmée",
-    "scheduledAt": "Programmée : {date}"
   },
   "search": {
     "noRecentSearches": "Aucune recherche récente",
@@ -371,6 +365,14 @@
   "sources": {
     "empty": "Vos sources configurées apparaîtront ici."
   },
+  "tasks": {
+    "empty": "Aucune tâche",
+    "history": "Historique",
+    "inProgress": "En cours",
+    "running": "En cours d'exécution…",
+    "scheduled": "Programmée",
+    "scheduledAt": "Programmée : {date}"
+  },
   "titleShowcase": {
     "details": "Détails",
     "directedBy": "Dirigé par",
@@ -380,9 +382,9 @@
   "ui": {
     "modal": {
       "seasonsChooser": {
-        "title": "Choix des saisons",
+        "noDescription": "Aucune description",
         "selectAll": "Toutes les saisons",
-        "noDescription": "Aucune description"
+        "title": "Choix des saisons"
       }
     },
     "notification": {

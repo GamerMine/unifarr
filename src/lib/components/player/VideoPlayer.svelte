@@ -8,6 +8,7 @@
 		EnterFullScreen,
 		ExitFullScreen,
 		Gear,
+		MixerHorizontal,
 		Pause,
 		Play,
 		SpeakerLoud,
@@ -33,6 +34,8 @@
 		jellyfinGetPlaySession,
 		jellyfinUpdateProgress
 	} from '#lib/remote/jellyfin.remote.ts';
+	import { _ } from 'svelte-i18n';
+	import type { JellyfinMediaStream } from '@unifarr/connectors/types/jellyfin';
 
 	let { modalId }: { modalId: symbol } = $props();
 
@@ -90,6 +93,9 @@
 	let volume: number = $state(1);
 	let mute: boolean = $state(false);
 
+	let audioLanguages: JellyfinMediaStream[] = $state([])
+	let currentAudioLanguage: number = $state(0)
+
 	let resolution: number = $state(1080);
 	let currentBitrate: number = $state(0);
 
@@ -102,15 +108,23 @@
 	const fetchPlaybackInfo = (
 		itemId: string,
 		maxBitrate: number | undefined = undefined,
-		starting: boolean = true
+		audioIndex: number | undefined = undefined,
+		paused: boolean = false
 	) =>
-		jellyfinGetItemById(itemId).then(({ data: item }) =>
+		jellyfinGetItemById(itemId).then(({ data: item }) => {
+			if (!audioIndex) {
+				audioLanguages = item?.MediaStreams.filter((i: JellyfinMediaStream) => i.Type === 'Audio');
+				currentAudioLanguage = audioLanguages[0].Index;
+			}
+
 			jellyfinGetPlaySession({
 				itemId,
+				mediaSourceId: item?.MediaSources?.[0].Id,
 				deviceProfile: getDeviceProfile(),
 				startTimeTicks:
 					item?.UserData?.PlaybackPositionTicks || Math.floor(displayedTime * 10_000_000),
-				maxStreamingBitrate: maxBitrate || getQualities(item?.Height || 1080)[0].maxBitrate
+				maxStreamingBitrate: maxBitrate || getQualities(item?.Height || 1080)[0].maxBitrate,
+				audioStreamIndex: currentAudioLanguage
 			}).then(async ({ data: playbackInfo }) => {
 				if (!playbackInfo) return;
 				const { playbackUri, playSessionId: sessionId, directPlay } = playbackInfo;
@@ -131,6 +145,7 @@
 
 						hls.loadSource(settings.globalSettings.jellyfin.baseUrl + playbackUri);
 						hls.attachMedia(video);
+						//await video.play();
 					} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
 						/*
 						 * HLS.js does NOT work on iOS on iPhone because Safari on iPhone does not support MSE.
@@ -183,7 +198,10 @@
 						jellyfinGetContinueWatching().refresh();
 					});
 				};
+
+				if (!paused) await video.play();
 			})
+			}
 		);
 
 	function onSeekStart() {
@@ -243,14 +261,27 @@
 		if (bitrate === currentBitrate) return;
 
 		currentBitrate = bitrate;
+		let wasPaused = paused;
 		video.pause();
 		let timeBeforeLoad = video.currentTime;
-		let stateBeforeLoad = paused;
 		await reportProgress?.();
 		deleteEncoding?.();
-		await fetchPlaybackInfo?.($playerState.jellyfinId, bitrate, false);
+		await fetchPlaybackInfo?.($playerState.jellyfinId, bitrate, currentAudioLanguage, wasPaused);
 		displayedTime = timeBeforeLoad;
-		paused = stateBeforeLoad;
+	}
+
+	async function handleSelectAudioStream(index: number) {
+		if (!$playerState.jellyfinId || seeking) return;
+		if (index === currentAudioLanguage) return;
+
+		currentAudioLanguage = index;
+		let wasPaused = paused;
+		video.pause();
+		let timeBeforeLoad = video.currentTime;
+		await reportProgress?.();
+		deleteEncoding?.();
+		await fetchPlaybackInfo?.($playerState.jellyfinId, currentBitrate, currentAudioLanguage, wasPaused);
+		displayedTime = timeBeforeLoad;
 	}
 
 	function secondsToTime(seconds: number, forceHours = false) {
@@ -337,7 +368,7 @@
 
 <div
 	class={classNames(
-		'relative flex h-[100dvh] w-screen items-center justify-center bg-black sm:h-screen',
+		'relative flex h-dvh w-screen items-center justify-center bg-black sm:h-screen',
 		{
 			'cursor-none': !uiVisible
 		}
@@ -417,7 +448,25 @@
 						</IconButton>
 
 						<div class="flex items-center space-x-3">
-							<ContextMenuButton heading="Quality">
+							{#if audioLanguages.length > 1}
+								<ContextMenuButton heading={$_('library.content.audioLanguage')}>
+									{#snippet menu()}
+										{#each audioLanguages as al (al.Index)}
+											<SelectableContextMenuItem
+												selected={al.Index === currentAudioLanguage}
+												onclick={() => handleSelectAudioStream(al.Index)}
+											>
+												{al.DisplayTitle}
+											</SelectableContextMenuItem>
+										{/each}
+									{/snippet}
+
+									<IconButton>
+										<MixerHorizontal size="20" />
+									</IconButton>
+								</ContextMenuButton>
+							{/if}
+							<ContextMenuButton heading={$_('library.content.quality')}>
 								{#snippet menu()}
 									{#each getQualities(resolution) as quality (quality)}
 										<SelectableContextMenuItem

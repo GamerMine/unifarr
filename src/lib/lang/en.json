@@ -101,6 +101,7 @@
   },
   "library": {
     "LibraryItemContext": {
+      "addRemoveSeriesEpisodes": "Add/Remove episodes",
       "markUnwatched": "Mark as unwatched",
       "markWatched": "Mark as watched",
       "openJellyfin": "Open in Jellyfin",
@@ -109,6 +110,7 @@
       "openTMDB": "Open in TMDB"
     },
     "content": {
+      "audioLanguage": "Audio language",
       "available": "Available",
       "beingAdded": "Is being added",
       "beingRemoved": "Is being removed",
@@ -127,6 +129,7 @@
       "networks": "Networks",
       "nextAirDate": "Next Air Date",
       "play": "Play",
+      "quality": "Quality",
       "queued": "In Queue",
       "recommendations": "Recommendations",
       "releaseDate": "Release Date",
@@ -145,6 +148,11 @@
       "status": "Status",
       "viewAll": "View All",
       "viewLess": "View Less"
+    },
+    "emptyState": {
+      "available": "Your Jellyfin's items will appear here.",
+      "unavailable": "Your non available Radarr and Sonarr items will appear here.",
+      "watched": "Your Jellyfin's watched items will appear here."
     },
     "loadMore": "Load More",
     "missingConfiguration": "Configure Radarr, Sonarr and Jellyfin to watch and manage your library",
@@ -197,14 +205,6 @@
       "tasks": "Tasks",
       "user": "User"
     }
-  },
-  "tasks": {
-    "empty": "No tasks",
-    "history": "History",
-    "inProgress": "In progress",
-    "running": "Running…",
-    "scheduled": "Scheduled",
-    "scheduledAt": "Scheduled: {date}"
   },
   "search": {
     "noRecentSearches": "No recent searches",
@@ -362,6 +362,17 @@
     "welcome": "Welcome!",
     "welcomeOnUnifarr": "Welcome on Unifarr!"
   },
+  "sources": {
+    "empty": "Your configured sources will appear here."
+  },
+  "tasks": {
+    "empty": "No tasks",
+    "history": "History",
+    "inProgress": "In progress",
+    "running": "Running…",
+    "scheduled": "Scheduled",
+    "scheduledAt": "Scheduled: {date}"
+  },
   "titleShowcase": {
     "details": "Details",
     "directedBy": "Directed By",
@@ -371,9 +382,9 @@
   "ui": {
     "modal": {
       "seasonsChooser": {
-        "title": "Seasons chooser",
+        "noDescription": "No description",
         "selectAll": "All seasons",
-        "noDescription": "No description"
+        "title": "Seasons chooser"
       }
     },
     "notification": {

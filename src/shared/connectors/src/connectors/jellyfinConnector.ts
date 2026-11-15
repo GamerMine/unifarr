@@ -169,8 +169,10 @@ export class JellyfinConnector {
 	public async postItemsByIdPlaybackInfo(
 		userId: string,
 		itemId: string,
+		mediaSourceId: string,
 		maxStreamingBitrate: number,
 		startTimeTicks: number,
+		audioStreamIndex: number,
 		deviceProfile: JellyfinDeviceProfile
 	) {
 		return this.client.POST('/Items/{itemId}/PlaybackInfo', {
@@ -179,7 +181,9 @@ export class JellyfinConnector {
 			},
 			body: {
 				UserId: userId,
+				AudioStreamIndex: audioStreamIndex,
 				MaxStreamingBitrate: maxStreamingBitrate,
+				MediaSourceId: mediaSourceId,
 				StartTimeTicks: startTimeTicks,
 				DeviceProfile: deviceProfile,
 				AutoOpenLiveStream: true
