@@ -11,3 +11,10 @@ export type JellyfinProfileConditionType = components['schemas']['ProfileConditi
 export type JellyfinProfileCondition = components['schemas']['ProfileCondition'];
 export type JellyfinCodecProfile = components['schemas']['CodecProfile'];
 export type JellyfinMediaStream = components['schemas']['MediaStream'];
+
+export type TrackEvent = {
+	Id: number,
+	Text: string,
+	StartPositionTicks: number,
+	EndPositionTicks: number
+}

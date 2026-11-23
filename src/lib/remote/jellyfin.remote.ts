@@ -222,6 +222,7 @@ export const jellyfinGetPlaySession = command(
 		startTimeTicks: v.number(),
 		maxStreamingBitrate: v.number(),
 		audioStreamIndex: v.number(),
+		subtitleIndex: v.number(),
 	}),
 	async (data) => {
 		const {
@@ -240,6 +241,7 @@ export const jellyfinGetPlaySession = command(
 			data.maxStreamingBitrate,
 			data.startTimeTicks,
 			data.audioStreamIndex,
+			data.subtitleIndex,
 			data.deviceProfile,
 		);
 

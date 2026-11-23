@@ -173,6 +173,7 @@ export class JellyfinConnector {
 		maxStreamingBitrate: number,
 		startTimeTicks: number,
 		audioStreamIndex: number,
+		subtitleIndex: number,
 		deviceProfile: JellyfinDeviceProfile
 	) {
 		return this.client.POST('/Items/{itemId}/PlaybackInfo', {
@@ -182,6 +183,7 @@ export class JellyfinConnector {
 			body: {
 				UserId: userId,
 				AudioStreamIndex: audioStreamIndex,
+				SubtitleStreamIndex: subtitleIndex,
 				MaxStreamingBitrate: maxStreamingBitrate,
 				MediaSourceId: mediaSourceId,
 				StartTimeTicks: startTimeTicks,

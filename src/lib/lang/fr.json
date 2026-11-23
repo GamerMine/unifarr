@@ -41,6 +41,7 @@
   "general": {
     "add": "Créer",
     "connectionRequired": "Vous devez être connectés pour effectuer cette action.",
+    "disabled": "Désactivé",
     "edit": "Modifier",
     "error": "Erreur",
     "invalidInputs": "Échec de validation des champs.",
@@ -146,6 +147,7 @@
       "sizeDisk": "Taille sur le disque",
       "spokenLanguages": "Langue parlée",
       "status": "Statut",
+      "subtitles": "Sous-titres",
       "viewAll": "Plus",
       "viewLess": "Moins"
     },

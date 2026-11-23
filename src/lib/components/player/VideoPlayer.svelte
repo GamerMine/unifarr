@@ -5,10 +5,11 @@
 	import Hls from 'hls.js';
 	import {
 		Cross2,
+		Disc,
 		EnterFullScreen,
 		ExitFullScreen,
 		Gear,
-		MixerHorizontal,
+		PanelBottomMinimized,
 		Pause,
 		Play,
 		SpeakerLoud,
@@ -35,7 +36,8 @@
 		jellyfinUpdateProgress
 	} from '#lib/remote/jellyfin.remote.ts';
 	import { _ } from 'svelte-i18n';
-	import type { JellyfinMediaStream } from '@unifarr/connectors/types/jellyfin';
+	import type { JellyfinMediaStream, TrackEvent } from '@unifarr/connectors/types/jellyfin';
+	import PlayerSubtitles from '#lib/components/player/PlayerSubtitles.svelte';
 
 	let { modalId }: { modalId: symbol } = $props();
 
@@ -93,8 +95,13 @@
 	let volume: number = $state(1);
 	let mute: boolean = $state(false);
 
-	let audioLanguages: JellyfinMediaStream[] = $state([])
-	let currentAudioLanguage: number = $state(0)
+	let subtitleStreams: JellyfinMediaStream[] = $state([]);
+	let currentSubtitleStream: number = $state(-1);
+	let currentSubtitles: TrackEvent[] | undefined = $state(undefined);
+	let currentSubtitleText: string = $state('');
+
+	let audioStreams: JellyfinMediaStream[] = $state([]);
+	let currentAudioStream: number = $state(0);
 
 	let resolution: number = $state(1080);
 	let currentBitrate: number = $state(0);
@@ -109,12 +116,15 @@
 		itemId: string,
 		maxBitrate: number | undefined = undefined,
 		audioIndex: number | undefined = undefined,
+		subtitleIndex: number = -1,
 		paused: boolean = false
 	) =>
 		jellyfinGetItemById(itemId).then(({ data: item }) => {
 			if (!audioIndex) {
-				audioLanguages = item?.MediaStreams.filter((i: JellyfinMediaStream) => i.Type === 'Audio');
-				currentAudioLanguage = audioLanguages[0].Index;
+				subtitleStreams = item?.MediaStreams.filter((i: JellyfinMediaStream) => i.Type === 'Subtitle');
+
+				audioStreams = item?.MediaStreams.filter((i: JellyfinMediaStream) => i.Type === 'Audio');
+				currentAudioStream = audioStreams[0].Index;
 			}
 
 			jellyfinGetPlaySession({
@@ -124,7 +134,8 @@
 				startTimeTicks:
 					item?.UserData?.PlaybackPositionTicks || Math.floor(displayedTime * 10_000_000),
 				maxStreamingBitrate: maxBitrate || getQualities(item?.Height || 1080)[0].maxBitrate,
-				audioStreamIndex: currentAudioLanguage
+				audioStreamIndex: currentAudioStream,
+				subtitleIndex
 			}).then(async ({ data: playbackInfo }) => {
 				if (!playbackInfo) return;
 				const { playbackUri, playSessionId: sessionId, directPlay } = playbackInfo;
@@ -145,7 +156,6 @@
 
 						hls.loadSource(settings.globalSettings.jellyfin.baseUrl + playbackUri);
 						hls.attachMedia(video);
-						//await video.play();
 					} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
 						/*
 						 * HLS.js does NOT work on iOS on iPhone because Safari on iPhone does not support MSE.
@@ -266,22 +276,31 @@
 		let timeBeforeLoad = video.currentTime;
 		await reportProgress?.();
 		deleteEncoding?.();
-		await fetchPlaybackInfo?.($playerState.jellyfinId, bitrate, currentAudioLanguage, wasPaused);
+		await fetchPlaybackInfo?.($playerState.jellyfinId, bitrate, currentAudioStream, currentSubtitleStream, wasPaused);
 		displayedTime = timeBeforeLoad;
 	}
 
 	async function handleSelectAudioStream(index: number) {
 		if (!$playerState.jellyfinId || seeking) return;
-		if (index === currentAudioLanguage) return;
+		if (index === currentAudioStream) return;
 
-		currentAudioLanguage = index;
+		currentAudioStream = index;
 		let wasPaused = paused;
 		video.pause();
 		let timeBeforeLoad = video.currentTime;
 		await reportProgress?.();
 		deleteEncoding?.();
-		await fetchPlaybackInfo?.($playerState.jellyfinId, currentBitrate, currentAudioLanguage, wasPaused);
+		await fetchPlaybackInfo?.($playerState.jellyfinId, currentBitrate, currentAudioStream, currentSubtitleStream, wasPaused);
 		displayedTime = timeBeforeLoad;
+	}
+
+	async function handleSelectSubtitle(index: number | undefined) {
+		if (!$playerState.jellyfinId || seeking) return;
+		if (index === currentSubtitleStream) return;
+
+		currentSubtitleStream = index ? index : -1;
+		let subjson = await fetch(settings.globalSettings.jellyfin.baseUrl + '/Videos/' + $playerState.jellyfinId + '/' + $playerState.jellyfinId + '/Subtitles/' + currentSubtitleStream + '/0/Stream.js');
+		currentSubtitles = (await subjson.json()).TrackEvents;
 	}
 
 	function secondsToTime(seconds: number, forceHours = false) {
@@ -362,6 +381,22 @@
 			volume = Math.max(volume - 0.1, 0);
 		}
 	}
+
+	function timeUpdate() {
+		displayedTime = !seeking && videoLoaded ? video.currentTime : displayedTime;
+		let currentTimeTick = Math.floor(video.currentTime * 10_000_000);
+
+		if (currentSubtitles) {
+			let subtext = currentSubtitles.find((sub) => currentTimeTick >= sub.StartPositionTicks && currentTimeTick <= sub.EndPositionTicks);
+			if (!subtext) {
+				currentSubtitleText = '';
+				return;
+			}
+			if (subtext.Text !== currentSubtitleText) {
+				currentSubtitleText = subtext.Text;
+			}
+		}
+	}
 </script>
 
 <svelte:window on:keydown={handleShortcuts} />
@@ -390,8 +425,7 @@
 			bind:this={video}
 			bind:paused
 			bind:duration
-			ontimeupdate={() =>
-				(displayedTime = !seeking && videoLoaded ? video.currentTime : displayedTime)}
+			ontimeupdate={() => timeUpdate()}
 			onprogress={() => handleBuffer()}
 			onplay={() => {
 				if (seeking) video?.pause();
@@ -448,12 +482,36 @@
 						</IconButton>
 
 						<div class="flex items-center space-x-3">
-							{#if audioLanguages.length > 1}
+							{#if subtitleStreams.length > 0}
+								<ContextMenuButton heading={$_('library.content.subtitles')}>
+									{#snippet menu()}
+										<SelectableContextMenuItem
+											selected={currentSubtitleStream === -1}
+											onclick={() => handleSelectSubtitle(undefined)}
+										>
+											{$_('general.disabled')}
+										</SelectableContextMenuItem>
+										{#each subtitleStreams as al (al.Index)}
+											<SelectableContextMenuItem
+												selected={al.Index === currentSubtitleStream}
+												onclick={() => handleSelectSubtitle(al.Index)}
+											>
+												{al.DisplayTitle}
+											</SelectableContextMenuItem>
+										{/each}
+									{/snippet}
+
+									<IconButton>
+										<PanelBottomMinimized size="20" />
+									</IconButton>
+								</ContextMenuButton>
+							{/if}
+							{#if audioStreams.length > 1}
 								<ContextMenuButton heading={$_('library.content.audioLanguage')}>
 									{#snippet menu()}
-										{#each audioLanguages as al (al.Index)}
+										{#each audioStreams as al (al.Index)}
 											<SelectableContextMenuItem
-												selected={al.Index === currentAudioLanguage}
+												selected={al.Index === currentAudioStream}
 												onclick={() => handleSelectAudioStream(al.Index)}
 											>
 												{al.DisplayTitle}
@@ -462,7 +520,7 @@
 									{/snippet}
 
 									<IconButton>
-										<MixerHorizontal size="20" />
+										<Disc size="20" />
 									</IconButton>
 								</ContextMenuButton>
 							{/if}
@@ -524,3 +582,7 @@
 		</div>
 	{/if}
 </div>
+
+{#if currentSubtitles}
+	<PlayerSubtitles text={currentSubtitleText} />
+{/if}

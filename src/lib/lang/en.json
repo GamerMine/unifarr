@@ -41,6 +41,7 @@
   "general": {
     "add": "Add",
     "connectionRequired": "You must be logged in, in order to do this.",
+    "disabled": "Disabled",
     "edit": "Edit",
     "error": "Error",
     "invalidInputs": "Fields validation failed.",
@@ -146,6 +147,7 @@
       "sizeDisk": "Size on disk",
       "spokenLanguages": "Spoken Languages",
       "status": "Status",
+      "subtitles": "Subtitles",
       "viewAll": "View All",
       "viewLess": "View Less"
     },
